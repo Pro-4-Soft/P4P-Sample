@@ -1,0 +1,9 @@
+{
+  "name": "p4packing-sample",
+  "version": "1.0.0",
+  "description": "Node.js sample that consumes the P4P-Packing API (https://p4p.pro4soft.com)",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

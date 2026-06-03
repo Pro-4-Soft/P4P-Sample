@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>P4PackingSample</RootNamespace>
+    <AssemblyName>p4packing-sample</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Ship input.json next to the binary, refreshing it whenever the source file changes. -->
+  <ItemGroup>
+    <None Update="input.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
