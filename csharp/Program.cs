@@ -55,8 +55,13 @@ else
             // Error bodies are plain text (or a ProblemDetails JSON on malformed
             // input); either way, surfacing the body gives the clearest message.
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                Console.WriteLine("Rate limited: keyless calls are capped at 1/min per IP. " +
-                                  "Wait a minute and try again, or set an API key.");
+            {
+                // The server reports how long the window has left; don't assume a duration.
+                var retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds;
+                var wait = retryAfter is null ? "shortly" : $"in {retryAfter:0}s";
+                Console.WriteLine($"Rate limited: keyless calls are capped per IP. Retry {wait}, " +
+                                  "or set an API key to remove the limit.");
+            }
             else
                 Console.WriteLine($"Request failed ({(int)response.StatusCode} {response.StatusCode}): {responseBody}");
         }

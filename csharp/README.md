@@ -20,8 +20,8 @@ cd csharp
 dotnet run
 ```
 
-Runs keyless. Keyless `POST /api/pack` is rate-limited to 1 request/minute per IP; on `429` the
-sample reports it and exits. The program waits for Enter at the end so a double-clicked console
+Runs keyless. Keyless `POST /api/pack` is rate-limited per IP (currently 1 request/minute); on
+`429` the sample reports the `Retry-After` wait and exits. The program waits for Enter at the end so a double-clicked console
 window doesn't close before you read the output.
 
 ## Edit the request

@@ -20,8 +20,8 @@ cd php
 php main.php
 ```
 
-Runs keyless. Keyless `POST /api/pack` is rate-limited to 1 request/minute per IP; on `429` the
-sample reports it and exits.
+Runs keyless. Keyless `POST /api/pack` is rate-limited per IP (currently 1 request/minute); on
+`429` the sample reports the `Retry-After` wait and exits.
 
 ## Edit the request
 

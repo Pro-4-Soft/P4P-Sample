@@ -18,8 +18,8 @@ difference is just the container dimensions and `loadingMode` you pass.
 
 What's relevant when integrating against it:
 
-- **Optimization objective is selectable** — `optimizeBy: "Volume"` maximizes utilization;
-  `"Cost"` minimizes total container cost across a heterogeneous container set.
+- **Optimization objective is selectable** — `optimizeBy: "volume"` maximizes utilization;
+  `"cost"` minimizes total container cost across a heterogeneous container set.
 - **Constraints are honored per item** — orientation lock (`uprightOnly`), stacking strength
   (`crashability`), per-container weight caps (`maxContainerWeight`), and single-SKU containers.
 - **Bounded, predictable latency** — each request runs under a hard **5 s** compute budget; on
@@ -51,9 +51,11 @@ cd python        # or csharp, javascript, java, php
 python main.py
 ```
 
-Samples run keyless against the live API. Keyless `POST /api/pack` is rate-limited to **1 request
-per minute per IP** (`429` on overrun); each sample reports it and exits cleanly. Set an API key in
-the config block at the top of the program to remove the limit.
+Samples run keyless against the live API. Keyless `POST /api/pack` is rate-limited per IP
+(currently **1 request per minute**); on overrun the call returns `429` with a `Retry-After` header,
+which each sample reads and reports before exiting cleanly. `GET /api/pack/limits` publishes the
+current window if you want to pace requests up front. Set an API key in the config block at the top
+of the program to remove the limit.
 
 ## The packing request
 
@@ -81,16 +83,18 @@ touching code. JSON is **camelCase**; enums are **strings**.
 | `name` | string | Echoed back |
 | `unit` | string | `"in"`, `"cm"`, or `"ft"` |
 | `loadingMode` | string | `"topDown"`, `"frontLoad"`, or `"sideLoad"` |
-| `cost` | number | Per-container cost; required `> 0` when `optimizeBy` is `"Cost"` |
+| `cost` | number | Per-container cost; required `> 0` when `optimizeBy` is `"cost"` |
+| `payload` | string | Opaque, echoed back (e.g. your own container id) |
 
 **Top-level**
 
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `weightUnit` | string | `"lb"` | `"lb"` or `"kg"` |
-| `optimizeBy` | string | `"Volume"` | `"Volume"` or `"Cost"` (PascalCase on the wire) |
+| `optimizeBy` | string | `"volume"` | `"volume"` or `"cost"`; `"cost"` requires a `cost` on every container |
 | `singleSkuPerContainer` | bool | `false` | One item type per container |
 | `maxContainerWeight` | number | `0` | Weight cap per container, `0` = none |
+| `heavyOnBottom` | bool | `false` | Derive stacking order from `weight`, heaviest lowest; overrides `crashability` for items that have a weight |
 
 The response lists each used container with `utilization`, `totalWeight`, and its packed blocks,
 plus `unpackedItems` for anything that didn't fit.
@@ -103,6 +107,7 @@ plus `unpackedItems` for anything that didn't fit.
 | `GET` | `/api/pack/{id}` | A previously saved result |
 | `GET` | `/api/container/{id}/svg` | Isometric SVG of one container |
 | `GET` | `/api/pack/sample` | A sample request payload |
+| `GET` | `/api/pack/limits` | Current keyless rate limit (`windowSeconds`, `permitLimit`) |
 
 Base URL: `https://p4p.pro4soft.com/api`.
 
@@ -112,9 +117,10 @@ Status code first; bodies are plain text (or a `ProblemDetails` JSON on malforme
 
 | Status | Meaning |
 |---|---|
-| `400` | Validation error (bad dimensions, over a limit, item using `"ft"`) |
+| `400` | Validation error (bad dimensions, over a limit, item using `"ft"`, or `optimizeBy: "cost"` with a container that has no `cost`) |
+| `406` | An item fits no container in any allowed orientation |
 | `408` | Compute budget (5 s) exceeded |
-| `429` | Keyless rate limit (1/min per IP) — absent when an API key is sent |
+| `429` | Keyless rate limit exceeded; carries `Retry-After` (seconds) — absent when an API key is sent |
 | `401` / `402` | Invalid key / insufficient balance (only when a key is sent) |
 
 ## Pricing

@@ -54,8 +54,11 @@ def main() -> None:
             body = error.read().decode("utf-8", errors="replace")
             print()
             if error.code == 429:
-                print("Rate limited: keyless calls are capped at 1/min per IP. "
-                      "Wait a minute and try again, or set an API key.")
+                # The server reports how long the window has left; don't assume a duration.
+                retry_after = error.headers.get("Retry-After")
+                wait = f"in {retry_after}s" if retry_after else "shortly"
+                print(f"Rate limited: keyless calls are capped per IP. Retry {wait}, "
+                      "or set an API key to remove the limit.")
             else:
                 print(f"Request failed ({error.code} {error.reason}): {body}")
         except urllib.error.URLError as error:

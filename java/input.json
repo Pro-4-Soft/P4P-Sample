@@ -11,5 +11,5 @@
     { "name": "GMA Pallet 60\"", "length": 40, "width": 48, "height": 60, "loadingMode": "topDown", "unit": "in" }
   ],
   "weightUnit": "lb",
-  "optimizeBy": "Volume"
+  "optimizeBy": "volume"
 }

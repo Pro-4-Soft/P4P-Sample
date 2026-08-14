@@ -50,10 +50,12 @@ if (requestBody === null) {
     if (!response.ok) {
       // Error bodies are plain text (or a ProblemDetails JSON on malformed input);
       // either way, surfacing the body gives the clearest message.
-      if (response.status === 429)
-        console.log('Rate limited: keyless calls are capped at 1/min per IP. ' +
-                    'Wait a minute and try again, or set an API key.');
-      else
+      if (response.status === 429) {
+        // The server reports how long the window has left; don't assume a duration.
+        const retryAfter = response.headers.get('Retry-After');
+        console.log(`Rate limited: keyless calls are capped per IP. Retry ${retryAfter ? `in ${retryAfter}s` : 'shortly'}, ` +
+                    'or set an API key to remove the limit.');
+      } else
         console.log(`Request failed (${response.status} ${response.statusText}): ${responseBody}`);
     } else {
       printResult(responseBody);

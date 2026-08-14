@@ -61,10 +61,13 @@ public class PackingSample {
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
                     // Error bodies are plain text (or a ProblemDetails JSON on
                     // malformed input); surfacing the body gives the clearest message.
-                    if (response.statusCode() == 429)
-                        System.out.println("Rate limited: keyless calls are capped at 1/min per IP. "
-                            + "Wait a minute and try again, or set an API key.");
-                    else
+                    if (response.statusCode() == 429) {
+                        // The server reports how long the window has left; don't assume a duration.
+                        String wait = response.headers().firstValue("retry-after")
+                            .map(seconds -> "in " + seconds + "s").orElse("shortly");
+                        System.out.println("Rate limited: keyless calls are capped per IP. Retry " + wait
+                            + ", or set an API key to remove the limit.");
+                    } else
                         System.out.println("Request failed (" + response.statusCode() + "): " + response.body());
                 } else {
                     printResult(response.body());

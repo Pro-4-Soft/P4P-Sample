@@ -41,6 +41,15 @@ if (!file_exists($inputPath)) {
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
+    // Capture Retry-After so a rate-limited run can report the real wait.
+    $retryAfter = null;
+    curl_setopt($curl, CURLOPT_HEADERFUNCTION, function ($curl, $header) use (&$retryAfter) {
+        if (stripos($header, 'Retry-After:') === 0) {
+            $retryAfter = trim(substr($header, strlen('Retry-After:')));
+        }
+        return strlen($header);   // cURL treats any other return value as an error
+    });
+
     $responseBody = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
     $networkError = curl_error($curl);
@@ -54,8 +63,10 @@ if (!file_exists($inputPath)) {
         // Error bodies are plain text (or a ProblemDetails JSON on malformed
         // input); either way, surfacing the body gives the clearest message.
         if ($status === 429) {
-            echo "Rate limited: keyless calls are capped at 1/min per IP. "
-               . "Wait a minute and try again, or set an API key.\n";
+            // The server reports how long the window has left; don't assume a duration.
+            $wait = $retryAfter !== null ? "in {$retryAfter}s" : 'shortly';
+            echo "Rate limited: keyless calls are capped per IP. Retry $wait, "
+               . "or set an API key to remove the limit.\n";
         } else {
             echo "Request failed ($status): $responseBody\n";
         }
